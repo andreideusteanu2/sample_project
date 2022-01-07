@@ -1,5 +1,6 @@
 import recordlinkage as rl
 import pandas as pd
+import helpers as h
 
 def get_matches(left_dataset, right_dataset, similar_columns):
     indexer = rl.Index()
@@ -39,5 +40,15 @@ def get_matches(left_dataset, right_dataset, similar_columns):
                           , rsuffix = '__'+right_dataset['origin'])
     
     subset_of_matches = subset_of_matches.reindex(sorted(subset_of_matches.columns), axis=1)
+    
+    return subset_of_matches
+
+def match(dataset_1, dataset_2, origin_mapping, similar_columns, logic_dict, combination):
+    filtering_dict = h.get_filtering_dict(logic_dict, combination)
+    filtering_query = h.get_filtering_query(filtering_dict)
+
+    datasets = h.filter_data(dataset_1, dataset_2, filtering_query, origin_mapping)
+
+    subset_of_matches = get_matches(datasets['left'], datasets['right'], similar_columns)
     
     return subset_of_matches

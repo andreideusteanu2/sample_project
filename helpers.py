@@ -1,3 +1,5 @@
+import pandas as pd
+
 def get_filtering_dict(logic_dict, combination):
     filtering_dict = {}
     for key in logic_dict.keys():
@@ -45,12 +47,14 @@ def filter_data(dataset_1, dataset_2, filtering_query, origin_mapping):
     return datasets
 
 def get_combinations(dataset_1, dataset_2, blocking_columns):
-    combinations = (pd.concat([facebook_dataset_clean[blocking_columns]
-                          , website_dataset_clean[blocking_columns]])
-                .drop_duplicates()
-                .dropna()
-               )
+    if bool(blocking_columns):
+        combinations = (pd.concat([dataset_1[blocking_columns]
+                              , dataset_2[blocking_columns]])
+                    .drop_duplicates()
+                    .dropna()
+                   )
 
-    combinations = combinations.to_dict(orient = 'records')
-    
-    return combinations
+        combinations = combinations.to_dict(orient = 'records')
+
+        return combinations
+        
