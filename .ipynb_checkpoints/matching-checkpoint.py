@@ -2,6 +2,7 @@ import recordlinkage as rl
 import pandas as pd
 import helpers as h
 import jellyfish
+from fuzzywuzzy import fuzz
 
 def get_matches(left_dataset, right_dataset, similar_columns):
     indexer = rl.Index()
@@ -67,3 +68,13 @@ def is_levenstein_matching(string_1, string_2, fuzzy = True):
     
     else:
         return string_1 == string_2
+    
+def is_fuzzy_address_matching(address_1, address_2):
+    partial_ratio = fuzz.partial_ratio(address_1, address_2)
+    sort_ratio = fuzz.token_sort_ratio(address_1, address_2)
+    set_ratio = fuzz.token_set_ratio(address_1, address_2)
+    
+    if abs(partial_ratio - sort_ratio) <=5 or set_ratio >=85:
+        return True
+    else:
+        return False
