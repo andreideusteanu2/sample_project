@@ -5,6 +5,7 @@ import jellyfish
 from fuzzywuzzy import fuzz
 
 def get_matches(left_dataset, right_dataset, similar_columns):
+    #based on https://towardsdatascience.com/performing-deduplication-with-record-linkage-and-supervised-learning-b01a66cc6882
     indexer = rl.Index()
     for column in similar_columns:
         indexer.add(rl.index.SortedNeighbourhood(left_on = column
@@ -14,6 +15,7 @@ def get_matches(left_dataset, right_dataset, similar_columns):
     
     combined_index_unqiue = combined_index.drop_duplicates(keep='first')
     
+    #based on https://medium.com/@appaloosastore/string-similarity-algorithms-compared-3f7b4d12f0ff
     compare = rl.Compare(n_jobs = -1)
     for column in similar_columns:
         compare.string(column, column, method = 'jarowinkler'
@@ -70,6 +72,7 @@ def is_levenstein_matching(string_1, string_2, fuzzy = True):
         return string_1 == string_2
     
 def is_fuzzy_address_matching(address_1, address_2):
+    #based on https://www.datacamp.com/community/tutorials/fuzzy-string-python
     partial_ratio = fuzz.partial_ratio(address_1, address_2)
     sort_ratio = fuzz.token_sort_ratio(address_1, address_2)
     set_ratio = fuzz.token_set_ratio(address_1, address_2)
