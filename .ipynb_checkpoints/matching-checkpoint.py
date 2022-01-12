@@ -1,6 +1,7 @@
 import recordlinkage as rl
 import pandas as pd
 import helpers as h
+import jellyfish
 
 def get_matches(left_dataset, right_dataset, similar_columns):
     indexer = rl.Index()
@@ -52,3 +53,17 @@ def match(dataset_1, dataset_2, origin_mapping, similar_columns, logic_dict, com
     subset_of_matches = get_matches(datasets['left'], datasets['right'], similar_columns)
     
     return subset_of_matches
+
+def is_levenstein_matching(string_1, string_2, fuzzy = True):
+    if fuzzy:
+        distance = jellyfish.levenshtein_distance(string_1,string_2)
+        length_1 = len(string_1)
+        length_2 = len(string_2)
+
+        if distance <= abs(length_1 - length_2)+1 and distance >= abs(length_1 - length_2)-1:
+            return True
+        else:
+            return False
+    
+    else:
+        return string_1 == string_2
