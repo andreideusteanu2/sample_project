@@ -2,3 +2,4 @@ recordlinkage==0.14
 fsspec==2021.11.1
 gcsfs==2021.11.1
 fuzzywuzzy==0.18.0
+python-Levenshtein==0.12.2

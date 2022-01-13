@@ -29,30 +29,43 @@ def get_filtering_query(filtering_dict):
 def filter_data(dataset_1, dataset_2, filtering_query, origin_mapping):
     dataset_1_subset = dataset_1.query(filtering_query)
     
-    dataset_2_subset = dataset_2.query(filtering_query)
-    
-    counts = {'dataset_1':dataset_1_subset.shape[0]
-          , 'dataset_2':dataset_2_subset.shape[0]}
+    if dataset_2:
+        dataset_2_subset = dataset_2.query(filtering_query)
 
-    if counts['dataset_1']> counts['dataset_2']:
-        datasets = {'left':{'origin':origin_mapping['dataset_1'],'data':dataset_1_subset.copy(deep = True)}
-                   ,'right':{'origin':origin_mapping['dataset_2'],'data':dataset_2_subset.copy(deep = True)}
-                   }
+        counts = {'dataset_1':dataset_1_subset.shape[0]
+              , 'dataset_2':dataset_2_subset.shape[0]}
 
+        if counts['dataset_1']> counts['dataset_2']:
+            datasets = {'left':{'origin':origin_mapping['dataset_1']
+                                ,'data':dataset_1_subset.copy(deep = True)}
+                       ,'right':{'origin':origin_mapping['dataset_2']
+                                 ,'data':dataset_2_subset.copy(deep = True)}
+                       }
+
+        else:
+            datasets = {'left':{'origin':origin_mapping['dataset_2']
+                                ,'data':dataset_2_subset.copy(deep = True)}
+                       ,'right':{'origin':origin_mapping['dataset_1']
+                                 ,'data':dataset_1_subset.copy(deep = True)}
+                       }
+
+        return datasets
     else:
-        datasets = {'left':{'origin':origin_mapping['dataset_2'],'data':dataset_2_subset.copy(deep = True)}
-                   ,'right':{'origin':origin_mapping['dataset_1'],'data':dataset_1_subset.copy(deep = True)}
-                   }
-    
-    return datasets
+        return dataset_1_subset
 
 def get_combinations(dataset_1, dataset_2, blocking_columns):
     if bool(blocking_columns):
-        combinations = (pd.concat([dataset_1[blocking_columns]
-                              , dataset_2[blocking_columns]])
-                    .drop_duplicates()
-                    .dropna()
-                   )
+        if dataset_2:
+            combinations = (pd.concat([dataset_1[blocking_columns]
+                                  , dataset_2[blocking_columns]])
+                        .drop_duplicates()
+                        .dropna()
+                       )
+        else:
+            combinations = (dataset_1[blocking_columns]
+                            .drop_duplicates()
+                            .dropna()
+                           )
 
         combinations = combinations.to_dict(orient = 'records')
 

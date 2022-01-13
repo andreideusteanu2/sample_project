@@ -47,15 +47,39 @@ def get_matches(left_dataset, right_dataset, similar_columns):
     
     return subset_of_matches
 
+def unify_rows(dataset, blocking_columns):
+    out = {}
+    for row in dataset.iterrows():
+        row = row[1]
+        for column in row.keys():
+            if column in blocking_columns:
+                out[column] = row[column]
+            else:
+                if out.get(column) is None or pd.isna(out.get(column)):
+                    out[column] = row[column]
+                else:
+                    if not pd.isna(row[column]) and not pd.isna(out[column]):
+                        if len(str(out[column])) < len(str(row[column])):
+                            out[column] = row[column]
+    
+    return out
+
+
 def match(dataset_1, dataset_2, origin_mapping, similar_columns, logic_dict, combination):
+    
+    blocking_columns = []
+    for column in logic_dict.keys():
+        if logic_dict[column] == 'value':
+            blocking_columns.append(column)
+    
     filtering_dict = h.get_filtering_dict(logic_dict, combination)
     filtering_query = h.get_filtering_query(filtering_dict)
-
-    datasets = h.filter_data(dataset_1, dataset_2, filtering_query, origin_mapping)
-
-    subset_of_matches = get_matches(datasets['left'], datasets['right'], similar_columns)
     
+    datasets = h.filter_data(dataset_1, dataset_2, filtering_query, origin_mapping)
+    subset_of_matches = get_matches(datasets['left'], datasets['right'], similar_columns)
+
     return subset_of_matches
+    
 
 def is_levenstein_matching(string_1, string_2, fuzzy = True):
     if fuzzy:
