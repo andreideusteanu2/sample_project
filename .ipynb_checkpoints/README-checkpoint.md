@@ -36,7 +36,7 @@ The approach outlined here does 2 things:
 1. It combines Companies that are matching between either 2 of the datasets into a single view
 2. It saves unmatched data separately for later use and enhancement
 
-** Obviously unmatched data should be further explored **:
+__Obviously unmatched data should be further explored__:
 - are there other matching keys that could be used?
 - is the unmatched data truly unique or did the matching logic miss some matches?
 - in case no Country, Region, City information is available -> could a Machine Learning Classification algorithm be trained on the matched data to extract this information from the Address?
@@ -86,7 +86,7 @@ Figures below are taken based on the output of the last cell in notebook Dedupli
     - Find Matches - Facebook_Google.ipynb
     - Find Matches - Facebook_Website.ipynb
     - Find Matches - Google_Website.ipynb
-** Important Note: even after matching the Index from the original datasets is kept. The Index is an integer representing the position of a row in a certain dataset. This ensures that at any point the process a row can be traced back to its original dataset. **
+__Important Note: even after matching the Index from the original datasets is kept. The Index is an integer representing the position of a row in a certain dataset. This ensures that at any point the process a row can be traced back to its original dataset.__
 - There are 5 stages of logic applied between each of the 3 pairs:
     1. Fuzzy Match on Domain and Site Name for Companies with the same Country, Region, City
     2. Fuzzy Match on Domain and Site Name for Companies with the same Country, Region that do not have City available
@@ -97,6 +97,7 @@ Figures below are taken based on the output of the last cell in notebook Dedupli
     - Country, Region, City -> acted as blocking columns gradually eliminating them
     - Domain and Site Name -> sort the datasets by these columns and take the 3 nearest neighbours from the left dataset to the right dataset
     - Fuzzy Match using Jaro-Winkler similarity score. If the score was above 0.85 it was considered a match
+- the matching is represented in code using the file:matching.py, function:match which calls upon the function:get_matches to do the Sorted Neighbours pairs and calculate Jaro-Winkler similarity score.
 - at each stage of logic data was written in a Google Cloud Storage bucket in a directory corresponding to the pairs of datasets
     - Facebook Google https://console.cloud.google.com/storage/browser/soleadify_sample_data/facebook_google_matches
     - Facebook Website https://console.cloud.google.com/storage/browser/soleadify_sample_data/facebook_website_matches
@@ -115,6 +116,29 @@ Figures below are taken based on the output of the last cell in notebook Dedupli
 - represented in notebook Simplify Matched Data
 - based on step 3 there is some duplicate information in the columns:
     - Address, Zip Code, Phone, Site Name, Country, Region, City, Domain
+- Country, Region, City, Domain were reduced to a single column using exact matching
+- Zip Code and Phone Number both rely on a Levenshtein distance calculation and matching. This is available in code in the file:matching.py, function: is_levenstein_matching
+- Zip Code was reduced to a single column as follows:
+    - calculate the Levenshtein distance between Zip Code from Facebook vs the one from Google
+    - if this distance is between the difference in length between the 2 strings +/-1 -> it's a match, otherwise they are different
+    - this interval tries to make sure that the edit difference is caused by an extra space characther or different casing, and not by difference in the actual characthers
+    - in case of a match -> only 1 zip code is retained. Otherwise both of them are retained separated by a / characther
+- Phone number was reduced to a single column as follows:
+    - Google Raw Phone offered the best format for human readability and interpretability. Therefore, if possible, this was the preffered one to keep
+    - calculate the Levenshtein distance between Phone Number from Google vs the one from Facebook and Website respectively.
+    - in case of a match -> Google Phone Number is kept
+    - otherwise:
+        - if there is a match between Website and Facebok Phone, keep the one from Website combined with the one from Google separated by a / characther
+        - if not, all 3 were kept separated by a / characther
+    - in case the Google Phone was not available:
+        - check if Facebook and Website Phone match -> if they do keep the one from Website; if not keep both separated by / characther
+        - if only the Facebook or Website Phone was available, keep the one that is available
+- Address was reduced to a single column as follows:
+    - Calculate the partial_ratio, token_sort_ratio and token_set_ratio using fuzzywuzzy library
+    - These 3 functions are based on the Levenshtein distance and ratio combining this with some string preprocessing. They are documented here -> https://www.datacamp.com/community/tutorials/fuzzy-string-python and here -> https://towardsdatascience.com/string-matching-with-fuzzywuzzy-e982c61f8a84
+    - This calculation is represented in code in file:matching.py, function:is_fuzzy_address_matching
+    - If the absolute difference between the Partial Ratio and the Token Sort Ratio was less than or equal to 5 or if the Token Set Ratio was higher than 85, then these addresses were considered to be a match.
+    - If the addresses matched, the longest string was kept. Otherwise both of them were kept separated by a / characther.
 
 # Critiques of the Approach and Improvement Points
 
