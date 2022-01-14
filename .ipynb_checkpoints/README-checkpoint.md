@@ -169,7 +169,17 @@ However based on the difficulty and low performance of the approach outlined in 
 
 
 # Critiques of the Approach and Improvement Points
+1. The resulting dataset is small - only around 36.5% of the Facebook / Website datasests or 7.3% of the Google dataset. This could mean 2 things:
+    a. The approach used for matching did not have enough coverage. If finally the Domain fuyzzy matching failed could the address have been used?
+    b. Assuming the matching did its best using the available information, further development is needed to enhance the information available in the 3 datasets.
+2. Derived from point 1 above - a lot of data remains unmatched and therefore unenhanced.
+3. Category field is not unified. This information is rather different across the 3 datasets and I could not find an easy solution to combine them.
+4. The unified unique dataset is not truly unique. There is still 1 duplicate Root Domain, several Phone Numbers and Site Names are duplicated. It could be that 1 company has multiple phone numbers or Domains. Further investigation on this matter is required.
+5. The merging by UNION and DISTINCT was really slow - around 20 minutes on a dataset so small, 26K rows. Plus the approach of comparison row by row does not sound very scalable. It would require a great deal of lower level logic to split it across multiple execution nodes.
+6. The rules classifying 2 components (Phone Numbers, Addresses, Site Names etc.) are determined by the pure intuition of the developer. They may not be the best. Example file:matching.py, function:is_levenstein_matching, detailed for Zip Code deduplication.
 
 # Possible next steps
-
+1. Redo the matching, this time taking into account also Phone and Address. It may cover more entities and therefore lead to the best matching result possible using the fields available.
+2. Use a FULL OUTER JOIN based approach to combine the paired datasets into a single 1. It could be more performant and easier to develop.
+3. Instead of relying on rules set by human intuition to determine duplicates, use a Machine Learning Classifier to identify duplicates. Even a simple Classifier as a Logistic Regression could make use of much more complex rules than a human is able to infer.
 
