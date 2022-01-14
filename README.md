@@ -40,6 +40,7 @@ __Obviously unmatched data should be further explored__:
 - are there other matching keys that could be used?
 - is the unmatched data truly unique or did the matching logic miss some matches?
 - in case no Country, Region, City information is available -> could a Machine Learning Classification algorithm be trained on the matched data to extract this information from the Address?
+- could these be further reduced into a single dataset maybe by enforcing a common schema on them?
 ## Start
 Based on the first step, I determined that the Google dataset has the most information ~ 360K rows, whereas the Website and Facebook datasets contain slightly less information at around 72K rows each.
 
@@ -103,6 +104,20 @@ __Important Note: even after matching the Index from the original datasets is ke
     - Facebook Website https://console.cloud.google.com/storage/browser/soleadify_sample_data/facebook_website_matches
     - Google Website https://console.cloud.google.com/storage/browser/soleadify_sample_data/google_website_matches
     
+### Why was the approach that follows chosen?
+The approach to go from matched data across pairs of datasets to a 1 dataset for all was basically to:
+1. combine all the paired data under a single schema and dataset - simply put a UNION in SQL terms 
+2. reduce to the extent possible columns containing the same information into a single column - for instace instead of having 2 address fields keep only 1 address field matching / combining the previous 2 fields
+3. apply a logic to deduplicate the resulting set - simply put a form of DISTINCT in SQL terms
+
+An alternative approach could have been to JOIN again the dataset pairs.
+However:
+- this would have been even more reliant on the quality of the data and logic used in the JOIN Keys. At the moment of the implementation, I felt that the UNION approach allowed me to have more control over how I determine what entities I keep
+- it may have left out some combinations. There are 3 original datasets and therefore 3 pairs of 2 datasets. Combining only based on 2 of the pairs could have wrongly left out some matches.
+
+That was the rationale behind this approach. At the time of this development I thought it was best.
+However based on the difficulty and low performance of the approach outlined in Step 5, I think the JOIN approach would have been better than the UNION + DISTINCT approach.
+    
 ## Step 3 - Combine the matches from the pairs into a single dataset
 - represented in notebook Unify Matched Data.ipynb
 - the result from Step 2 was a set of around 4000 different csv files, one for each matching combination of Country, Region, City across the pairs of datasets
@@ -139,8 +154,26 @@ __Important Note: even after matching the Index from the original datasets is ke
     - This calculation is represented in code in file:matching.py, function:is_fuzzy_address_matching
     - If the absolute difference between the Partial Ratio and the Token Sort Ratio was less than or equal to 5 or if the Token Set Ratio was higher than 85, then these addresses were considered to be a match.
     - If the addresses matched, the longest string was kept. Otherwise both of them were kept separated by a / characther.
+- This step finally wrote data to the file https://storage.cloud.google.com/soleadify_sample_data/unified_matched_data/matches_simplified.csv
+
+## Step 5 - Deduplicate Matched Data
+- represented in notebook Deduplicate Matched Data.ipynb
+- There were in the simplified 29,761 rows in the dataset, however 26,350 unique entities in the dataset. Therefore some deduplication was needed.
+- The challenge of this step was to combine information across rows into a single view. 1 row had the data from the Facebook - Website pair whereas another row had data from the Google - Facebook pair.
+- The approach relies on the file:matching.py, function:unify_rows. The logic basically does a row by row comparison. It takes the values of the columns from the first row. Then if a following row has a NOT NULL information in 1 of the columns it takes that. Also if the length of the information in the following information is higher - it takes that one. (assumption take - a string of higher length contains more information than a shorter one)
+- Finally unique, matched data is written to the file -> https://storage.cloud.google.com/soleadify_sample_data/unified_and_unmatched_data/unified_unique.csv
+- The based on the Index unmatched data from the original datasets is separated into 3 different files based on their original source:
+    - https://storage.cloud.google.com/soleadify_sample_data/unified_and_unmatched_data/facebook_unmatched.csv
+    - https://storage.cloud.google.com/soleadify_sample_data/unified_and_unmatched_data/google_unmatched.csv
+    - https://storage.cloud.google.com/soleadify_sample_data/unified_and_unmatched_data/website_unmatched.csv
+
 
 # Critiques of the Approach and Improvement Points
+1. The resulting dataset is small - only around 36.5% of the Facebook / Website datasests or 7.3% of the Google dataset. This could mean 2 things:
+    a. The approach used for matching did not have enough coverage. If finally the Domain fuyzzy matching failed could the address have been used?
+    b. Assuming the matching did its best using the available information, further development is needed to enhance the information available in the 3 datasets.
+2. Category field is not unified. This information is rather different across the 3 datasets and I could not find an easy solution to combine them.
+3. The unified unique dataset is not truly unique. There is still 1 duplicate Root Domain, several 
 
 # Possible next steps
 
